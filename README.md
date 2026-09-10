@@ -1,15 +1,16 @@
 # BountyCheck
 
-**Check the evidence before you write the code.**
+**Find likely bounties, then check the evidence before you write the code.**
 
-A small Python CLI for screening saved bounty listings. It flags stale dates,
+A small Python CLI for finding GitHub issues that advertise bounties and screening
+them before you spend time coding. It flags stale dates,
 missing payment terms, unverified funding, existing assignments, competing
 submissions, and restrictions on AI-assisted work. Every decision includes reasons.
 
 Built from a practical frustration: a dollar amount in an issue title does not
 tell you whether the task is still available or whether you can get paid.
 
-## Try it
+## Scan GitHub
 
 Requires Python 3.10 or newer. No dependencies, API keys, or installation step.
 
@@ -17,9 +18,25 @@ Requires Python 3.10 or newer. No dependencies, API keys, or installation step.
 git clone https://github.com/Rogue-says/for-github-badge.git
 cd for-github-badge
 python3 bountycheck.py examples/listings.json --today 2026-09-10
-python3 bountycheck.py examples/listings.json --today 2026-09-10 --format json
+python3 github_bounties.py
+python3 bountycheck.py scans/github-YYYY-MM-DD.json
 python3 -m unittest discover -s tests -v
 ```
+
+`github_bounties.py` searches public GitHub issues for current open listings that
+mention “bounty,” saves normalized results under `scans/`, and prints the exact
+BountyCheck command to review them. It filters out pull requests and records an
+advertised dollar or USDC amount when it appears in the issue title or body.
+
+Use a more focused GitHub issue-search query when needed:
+
+```sh
+python3 github_bounties.py --query 'is:issue is:open org:projectdiscovery bounty' --limit 20
+```
+
+It works without an account, but GitHub's anonymous search limit is small. To use
+your own GitHub token for higher limits, set `GITHUB_TOKEN` in your terminal before
+running it. The token is only sent to GitHub and is never saved by BountyCheck.
 
 All bundled listings are **fictional examples**, not available jobs.
 
@@ -72,10 +89,12 @@ reports with no candidates. Exit code 2 means invalid input or a read error.
 
 ## Boundaries
 
-This version works **offline** on normalized records. It does not fetch GitHub,
-inspect wallets, check whether links are reachable, independently verify payment,
-apply for tasks, or claim a payout is guaranteed. An issue's update date may reflect
-unrelated activity. Reports are a review checklist, not a scam detector or funding audit.
+The GitHub scanner finds issues that *advertise* bounties. It cannot independently
+verify escrow, payment, eligibility, task availability, competing submissions, or
+whether AI assistance is permitted. Those fields remain unknown and BountyCheck
+marks the record for review. It never applies for work or claims a payout is
+guaranteed. An issue's update date may reflect unrelated activity. Reports are a
+review checklist, not a scam detector or funding audit.
 
 ## Contributing
 

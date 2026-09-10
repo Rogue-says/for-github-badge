@@ -7,6 +7,7 @@ from datetime import date
 from pathlib import Path
 
 from bountycheck import assess, main, markdown
+from github_bounties import normalize_issue, search
 
 
 TODAY = date(2026, 9, 10)
@@ -103,6 +104,52 @@ class CommandTests(unittest.TestCase):
         self.assertIn("CANDIDATE", out)
         self.assertIn("REVIEW", out)
         self.assertIn("SKIP", out)
+
+
+class GitHubScannerTests(unittest.TestCase):
+    def issue(self, **changes):
+        item = {
+            "title": "[Bounty $100] Fix parser", "body": "Payment is 100 USDC on acceptance.",
+            "html_url": "https://github.com/example/project/issues/4", "state": "open",
+            "updated_at": "2026-09-10T12:00:00Z", "repository_url": "https://api.github.com/repos/example/project",
+            "number": 4, "comments": 2, "assignees": [],
+        }
+        return item | changes
+
+    def test_normalize_is_conservative_and_extracts_advertised_amounts(self):
+        record = normalize_issue(self.issue())
+        self.assertEqual(record["funding"], "advertised")
+        self.assertEqual(record["source_metadata"]["advertised_reward"], ["$100", "100 USDC"])
+        self.assertFalse(record["assigned_to_other"])
+        self.assertIsNone(record["ai_allowed"])
+        self.assertIsNone(record["submission_url"])
+
+    def test_normalize_skips_pull_requests_and_bad_dates(self):
+        self.assertIsNone(normalize_issue(self.issue(pull_request={})))
+        self.assertIsNone(normalize_issue(self.issue(updated_at="not-a-date")))
+
+    def test_assignee_and_no_reward_are_recorded_without_overclaiming(self):
+        record = normalize_issue(self.issue(title="Fix parser", body="", assignees=[{"login": "other"}]))
+        self.assertTrue(record["assigned_to_other"])
+        self.assertEqual(record["funding"], "unknown")
+        self.assertEqual(record["source_metadata"]["advertised_reward"], [])
+
+    def test_search_builds_query_and_filters_invalid_items(self):
+        seen = []
+
+        def fake_request(url, token=None):
+            seen.append((url, token))
+            return {"items": [self.issue(), self.issue(pull_request={})]}
+
+        records = search("is:issue is:open bounty", 20, token="not-printed", request=fake_request)
+        self.assertEqual(len(records), 1)
+        self.assertIn("q=is%3Aissue", seen[0][0])
+        self.assertEqual(seen[0][1], "not-printed")
+
+    def test_search_rejects_empty_or_excessive_limits(self):
+        for query, limit in (("", 20), ("bounty", 0), ("bounty", 101)):
+            with self.subTest(query=query, limit=limit), self.assertRaises(ValueError):
+                search(query, limit, request=lambda *args, **kwargs: {"items": []})
 
 
 if __name__ == "__main__":
