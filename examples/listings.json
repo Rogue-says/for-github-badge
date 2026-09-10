@@ -1,0 +1,28 @@
+[
+  {
+    "title": "Demo: documented SDK fix (fictional)",
+    "url": "https://example.com/issues/1",
+    "state": "open",
+    "updated_at": "2026-09-10",
+    "funding": "confirmed",
+    "funding_evidence": "https://example.com/escrow/1",
+    "payment_terms": "https://example.com/terms",
+    "submission_url": "https://example.com/submit/1",
+    "assigned_to_other": false,
+    "ai_allowed": true,
+    "competing_submissions": 0
+  },
+  {
+    "title": "Demo: advertised reward without evidence (fictional)",
+    "url": "https://example.com/issues/2",
+    "state": "open",
+    "updated_at": "2026-06-01",
+    "funding": "advertised"
+  },
+  {
+    "title": "Demo: already closed (fictional)",
+    "url": "https://example.com/issues/3",
+    "state": "closed",
+    "updated_at": "2026-09-09"
+  }
+]
